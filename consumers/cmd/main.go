@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/ZiyanK/fraud-detection-system/consumers/db"
 	"github.com/ZiyanK/fraud-detection-system/consumers/kafka"
 	"github.com/ZiyanK/fraud-detection-system/consumers/logger"
+	"github.com/ZiyanK/fraud-detection-system/consumers/route"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -31,7 +34,13 @@ func main() {
 	defer consumer.Close()
 	log.Info("Connect and subscribed to topic successfully.")
 
-	kafka.ReadMessages(consumer)
+	go kafka.ReadMessages(consumer)
+
+	router := route.AddRouter()
+	err = router.Run(fmt.Sprintf(":%v", config.Port))
+	if err != nil {
+		log.Fatal("Failed to start server", zap.Error(err))
+	}
 }
 
 // configration is a struct used to get the environment variable from the config.yaml file

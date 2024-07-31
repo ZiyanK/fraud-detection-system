@@ -18,8 +18,9 @@ type Transaction struct {
 	TransactionID int       `db:"transaction_id" json:"transaction_id"`
 	UserID        int       `db:"user_id" json:"user_id"`
 	Amount        float64   `db:"amount" json:"amount"`
-	Type          string    `db:"type" json:"json"`
+	Type          string    `db:"type" json:"type"`
 	IsFraud       bool      `db:"is_fraud" json:"is_fraud"`
+	Source        string    `db:"source" json:"source"`
 	Timestamp     time.Time `db:"timestamp" json:"timestamp"`
 }
 
@@ -31,6 +32,7 @@ func generateTransaction() Transaction {
 		UserID:        rand.Intn(10000),
 		Amount:        math.Round(rand.Float64() * 1000),
 		Type:          TransactionTypes[rand.Intn(len(TransactionTypes))],
+		Source:        "message-broker",
 		Timestamp:     time.Now(),
 	}
 }
