@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"math"
 	"math/rand"
 	"time"
 
@@ -10,16 +11,16 @@ import (
 )
 
 const (
-	topic = "transactions"
+	topic = "transaction"
 )
 
 type Transaction struct {
-	TransactionID int
-	UserID        int
-	Amount        float64
-	Type          string
-	Timestamp     time.Time
-	IsFraud       bool
+	TransactionID int       `db:"transaction_id" json:"transaction_id"`
+	UserID        int       `db:"user_id" json:"user_id"`
+	Amount        float64   `db:"amount" json:"amount"`
+	Type          string    `db:"type" json:"json"`
+	IsFraud       bool      `db:"is_fraud" json:"is_fraud"`
+	Timestamp     time.Time `db:"timestamp" json:"timestamp"`
 }
 
 func generateTransaction() Transaction {
@@ -28,7 +29,7 @@ func generateTransaction() Transaction {
 	return Transaction{
 		TransactionID: rand.Intn(100000),
 		UserID:        rand.Intn(10000),
-		Amount:        rand.Float64() * 1000,
+		Amount:        math.Round(rand.Float64() * 1000),
 		Type:          TransactionTypes[rand.Intn(len(TransactionTypes))],
 		Timestamp:     time.Now(),
 	}

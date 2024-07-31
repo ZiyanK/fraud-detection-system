@@ -49,6 +49,8 @@ func ReadMessages(consumer *kafka.Consumer) {
 				model.SendAlert(transaction)
 			}
 
+			transaction.Store()
+
 		} else {
 			log.Error("Consumer error: ", zap.Error(err))
 		}

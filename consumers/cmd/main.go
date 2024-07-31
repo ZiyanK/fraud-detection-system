@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/ZiyanK/fraud-detection-system/consumers/db"
 	"github.com/ZiyanK/fraud-detection-system/consumers/kafka"
 	"github.com/ZiyanK/fraud-detection-system/consumers/logger"
 	"github.com/spf13/viper"
@@ -19,9 +20,9 @@ func main() {
 	}
 
 	// Databases Init
-	// if err := db.InitConn(config.DSN); err != nil {
-	// 	log.Fatal("Failed to conenct to the database", zap.Error(err))
-	// }
+	if err := db.InitConn(config.DSN); err != nil {
+		log.Fatal("Failed to conenct to the database", zap.Error(err))
+	}
 
 	consumer, err := kafka.InitConsumer(config.KafkaUrl, config.KafkaTopic)
 	if err != nil {
