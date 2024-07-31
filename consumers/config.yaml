@@ -1,0 +1,6 @@
+dsn: postgresql://root:password@localhost:5432/fraud_detection?sslmode=disable
+port: 8010
+jwt_secret: secret
+mode: dev
+kafkaUrl: localhost:61104
+kafkaTopic: transactions

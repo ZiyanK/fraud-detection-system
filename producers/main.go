@@ -19,6 +19,7 @@ type Transaction struct {
 	Amount        float64
 	Type          string
 	Timestamp     time.Time
+	IsFraud       bool
 }
 
 func generateTransaction() Transaction {
