@@ -50,7 +50,6 @@ func ReadMessages(consumer *kafka.Consumer) {
 			}
 
 			transaction.Store()
-
 		} else {
 			log.Error("Consumer error: ", zap.Error(err))
 		}
