@@ -27,17 +27,14 @@ func main() {
 		log.Fatal("Failed to conenct to the database", zap.Error(err))
 	}
 
-	consumer, err := kafka.InitConsumer(config.KafkaUrl, config.KafkaTopic)
-	if err != nil {
-		panic(err)
-	}
-	defer consumer.Close()
+	reader := kafka.InitConsumer(config.KafkaUrl, config.KafkaTopic)
+	defer reader.Close()
 	log.Info("Connect and subscribed to topic successfully.")
 
-	go kafka.ReadMessages(consumer)
+	go kafka.ReadMessages(reader)
 
 	router := route.AddRouter()
-	err = router.Run(fmt.Sprintf(":%v", config.Port))
+	err := router.Run(fmt.Sprintf(":%v", config.Port))
 	if err != nil {
 		log.Fatal("Failed to start server", zap.Error(err))
 	}
@@ -55,14 +52,16 @@ type configuration struct {
 
 // LoadConfig is used to load the configuration
 func LoadConfig() error {
-	viper.AddConfigPath(".")
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
+	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal("Error reading config file", zap.String("err", err.Error()))
-		return err
-	}
+	// Get configuration values
+	config.Port = viper.GetString("PORT")
+	config.DSN = viper.GetString("DSN")
+	config.JWTSecret = viper.GetString("JWT_SECRET")
+	config.KafkaUrl = viper.GetString("KAFKA_URL")
+	config.KafkaTopic = viper.GetString("KAFKA_TOPIC")
+
+	log.Info("config", zap.Any("config", config))
 
 	if err := viper.Unmarshal(&config); err != nil {
 		log.Fatal("unable to decode into struct", zap.String("err", err.Error()))

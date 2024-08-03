@@ -1,11 +1,12 @@
 package kafka
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/ZiyanK/fraud-detection-system/consumers/logger"
 	"github.com/ZiyanK/fraud-detection-system/consumers/model"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 )
 
@@ -13,29 +14,17 @@ var (
 	log = logger.CreateLogger()
 )
 
-func InitConsumer(kafkaUrl, kafkaTopic string) (*kafka.Consumer, error) {
-	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": kafkaUrl,
-		"group.id":          "detection_group",
-		"auto.offset.reset": "earliest",
+func InitConsumer(kafkaUrl, kafkaTopic string) *kafka.Reader {
+	return kafka.NewReader(kafka.ReaderConfig{
+		Brokers: []string{kafkaUrl},
+		GroupID: "detection_group",
+		Topic:   kafkaTopic,
 	})
-	if err != nil {
-		log.Error("Failed to create consumer: ", zap.Error(err))
-		return nil, err
-	}
-
-	err = consumer.Subscribe(kafkaTopic, nil)
-	if err != nil {
-		log.Error("Failed to subscribe to topic.", zap.String("topic", kafkaTopic), zap.Error(err))
-		return nil, err
-	}
-
-	return consumer, nil
 }
 
-func ReadMessages(consumer *kafka.Consumer) {
+func ReadMessages(reader *kafka.Reader) {
 	for {
-		msg, err := consumer.ReadMessage(-1)
+		msg, err := reader.ReadMessage(context.Background())
 		if err == nil {
 			var transaction model.Transaction
 			if err := json.Unmarshal(msg.Value, &transaction); err != nil {

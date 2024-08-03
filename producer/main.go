@@ -1,17 +1,22 @@
 package main
 
 import (
-	"encoding/json"
+	"bytes"
+	"context"
+	"encoding/gob"
+	"fmt"
 	"log"
 	"math"
 	"math/rand"
 	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/segmentio/kafka-go"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
-const (
-	topic = "transaction"
+var (
+	config configuration
 )
 
 type Transaction struct {
@@ -24,10 +29,20 @@ type Transaction struct {
 	Timestamp     time.Time `db:"timestamp" json:"timestamp"`
 }
 
-func generateTransaction() Transaction {
+func EncodeToBytes(p interface{}) []byte {
+	buf := bytes.Buffer{}
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(p)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func generateTransaction() []byte {
 	TransactionTypes := []string{"purchase", "transfer", "payment"}
 
-	return Transaction{
+	transaction := Transaction{
 		TransactionID: rand.Intn(100000),
 		UserID:        rand.Intn(10000),
 		Amount:        math.Round(rand.Float64() * 1000),
@@ -35,36 +50,62 @@ func generateTransaction() Transaction {
 		Source:        "message-broker",
 		Timestamp:     time.Now(),
 	}
+
+	log.Printf("Generated transaction: %+v \n", transaction)
+
+	return EncodeToBytes(transaction)
 }
 
-func sendToKafka(transaction Transaction, topic string) {
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost:61104",
-	})
-	if err != nil {
-		panic(err)
+func newKafkaWriter(kafkaUrl, topic string) *kafka.Writer {
+	return &kafka.Writer{
+		Addr:     kafka.TCP(kafkaUrl),
+		Topic:    topic,
+		Balancer: &kafka.LeastBytes{},
 	}
-
-	defer p.Close()
-
-	message, err := json.Marshal(transaction)
-	if err != nil {
-		log.Fatalf("Failed to marshal message : %s \n", err)
-	}
-
-	p.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Value:          message,
-	}, nil)
-
-	p.Flush(15 * 1000)
 }
 
 func main() {
+	// load config file
+	if err := LoadConfig(); err != nil {
+		panic(err)
+	}
+
+	writer := newKafkaWriter(config.KafkaUrl, config.KafkaTopic)
+	defer writer.Close()
+
 	for {
 		transaction := generateTransaction()
-		log.Printf("Generated transaction: %+v \n", transaction)
-		sendToKafka(transaction, topic)
+
+		msg := kafka.Message{
+			Value: []byte(transaction),
+		}
+
+		err := writer.WriteMessages(context.Background(), msg)
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		time.Sleep(time.Second * 1)
 	}
+}
+
+// configration is a struct used to get the environment variable from the config.yaml file
+type configuration struct {
+	KafkaUrl   string `mapstructure:"kafkaUrl"`
+	KafkaTopic string `mapstructure:"kafkaTopic"`
+}
+
+// LoadConfig is used to load the configuration
+func LoadConfig() error {
+	viper.AutomaticEnv()
+
+	config.KafkaUrl = viper.GetString("KAFKA_URL")
+	config.KafkaTopic = viper.GetString("KAFKA_TOPIC")
+
+	if err := viper.Unmarshal(&config); err != nil {
+		log.Fatal("unable to decode into struct", zap.String("err", err.Error()))
+		return err
+	}
+
+	return nil
 }

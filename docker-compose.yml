@@ -1,0 +1,75 @@
+services:
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      - DSN=postgresql://root:password@postgres:5432/fraud_detection?sslmode=disable
+      - PORT=8080
+      - JWT_SECRET=secret
+      - KAFKA_URL=localhost:9094
+      - KAFKA_TOPIC=transactions
+
+  producer:
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_URL=localhost:9094
+      - KAFKA_TOPIC=transactions
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: fraud_detection
+    ports:
+      - 5432:5432
+
+  kafka:
+    image: bitnami/kafka:3.7.1
+    environment:
+      KAFKA_CFG_NODE_ID: 0
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,EXTERNAL:SASL_PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://scgw-manager-kafka-server:9092,EXTERNAL://localhost:9094
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@scgw-manager-kafka-server:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CLIENT_USERS: ${SCGW_MANAGER_DEPROVISIONER_KAFKA_USERNAME}
+      KAFKA_CLIENT_PASSWORDS: ${SCGW_MANAGER_DEPROVISIONER_KAFKA_PASSWORD}
+    container_name: scgw-manager-kafka-server
+    hostname: scgw-manager-kafka-server
+    ports:
+      - "9094:9094"
+    networks:
+      - scgw-manager-kafka-network
+
+  init-kafka:
+    image: bitnami/kafka:3.7.1
+    depends_on:
+      - kafka
+    working_dir: "/opt/bitnami/kafka/bin"
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics.sh --bootstrap-server scgw-manager-kafka-server:9092 --list
+      echo -e 'Creating kafka topics'
+      kafka-topics.sh --bootstrap-server scgw-manager-kafka-server:9092 --create --topic transactions
+      echo -e 'Successfully created the following topics:'
+      kafka-topics.sh --bootstrap-server scgw-manager-kafka-server:9092 --list
+      "
+    networks:
+      - scgw-manager-kafka-network
+
+networks:
+  scgw-manager-kafka-network:
