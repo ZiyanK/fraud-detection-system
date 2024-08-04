@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ZiyanK/fraud-detection-system/consumers/db"
 	"github.com/ZiyanK/fraud-detection-system/consumers/kafka"
@@ -21,6 +22,8 @@ func main() {
 	if err := LoadConfig(); err != nil {
 		panic(err)
 	}
+
+	time.Sleep(4 * time.Second)
 
 	// Databases Init
 	if err := db.InitConn(config.DSN); err != nil {

@@ -12,4 +12,3 @@ This repository implements a transactional fraud detection service taking transa
 4. [sqlx](https://github.com/jmoiron/sqlx) is used to interact with the database
 5. [zap](https://github.com/uber-go/zap) for logging
 6. [viper](https://github.com/spf13/viper) to get the env variables
-7. [goose](https://github.com/pressly/goose) to handler migrations

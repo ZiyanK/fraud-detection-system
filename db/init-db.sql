@@ -1,5 +1,3 @@
--- +goose Up
--- +goose StatementBegin
 CREATE TABLE "transactions" (
   "transaction_id" INTEGER PRIMARY KEY,
   "user_id" INTEGER NOT NULL,
@@ -9,9 +7,3 @@ CREATE TABLE "transactions" (
   "source" VARCHAR(255) NULL,
   "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
--- +goose StatementEnd
-
--- +goose Down
--- +goose StatementBegin
-DROP TABLE "transactions";
--- +goose StatementEnd

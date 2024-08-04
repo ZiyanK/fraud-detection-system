@@ -1,9 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -29,17 +28,7 @@ type Transaction struct {
 	Timestamp     time.Time `db:"timestamp" json:"timestamp"`
 }
 
-func EncodeToBytes(p interface{}) []byte {
-	buf := bytes.Buffer{}
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(p)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return buf.Bytes()
-}
-
-func generateTransaction() []byte {
+func generateTransaction() Transaction {
 	TransactionTypes := []string{"purchase", "transfer", "payment"}
 
 	transaction := Transaction{
@@ -53,7 +42,7 @@ func generateTransaction() []byte {
 
 	log.Printf("Generated transaction: %+v \n", transaction)
 
-	return EncodeToBytes(transaction)
+	return transaction
 }
 
 func newKafkaWriter(kafkaUrl, topic string) *kafka.Writer {
@@ -76,11 +65,16 @@ func main() {
 	for {
 		transaction := generateTransaction()
 
-		msg := kafka.Message{
-			Value: []byte(transaction),
+		transactionByte, err := json.Marshal(transaction)
+		if err != nil {
+			fmt.Println(err)
 		}
 
-		err := writer.WriteMessages(context.Background(), msg)
+		msg := kafka.Message{
+			Value: transactionByte,
+		}
+
+		err = writer.WriteMessages(context.Background(), msg)
 		if err != nil {
 			fmt.Println(err)
 		}

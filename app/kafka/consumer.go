@@ -25,6 +25,7 @@ func InitConsumer(kafkaUrl, kafkaTopic string) *kafka.Reader {
 func ReadMessages(reader *kafka.Reader) {
 	for {
 		msg, err := reader.ReadMessage(context.Background())
+		log.Info("msg string", zap.Any("msg", string(msg.Value[:])))
 		if err == nil {
 			var transaction model.Transaction
 			if err := json.Unmarshal(msg.Value, &transaction); err != nil {

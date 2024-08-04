@@ -1,2 +1,3 @@
 /app/.env
 /producer/.env
+/db/postgres_data/
