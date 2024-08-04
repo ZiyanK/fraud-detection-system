@@ -14,6 +14,7 @@ var (
 	log = logger.CreateLogger()
 )
 
+// Initializes a consumer
 func InitConsumer(kafkaUrl, kafkaTopic string) *kafka.Reader {
 	return kafka.NewReader(kafka.ReaderConfig{
 		Brokers: []string{kafkaUrl},
@@ -22,6 +23,7 @@ func InitConsumer(kafkaUrl, kafkaTopic string) *kafka.Reader {
 	})
 }
 
+// Reads any new messages and processes it
 func ReadMessages(reader *kafka.Reader) {
 	for {
 		msg, err := reader.ReadMessage(context.Background())

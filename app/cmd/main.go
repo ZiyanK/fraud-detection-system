@@ -23,17 +23,19 @@ func main() {
 		panic(err)
 	}
 
-	time.Sleep(4 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// Databases Init
 	if err := db.InitConn(config.DSN); err != nil {
 		log.Fatal("Failed to conenct to the database", zap.Error(err))
 	}
 
+	// Initialize the kafka consumer
 	reader := kafka.InitConsumer(config.KafkaUrl, config.KafkaTopic)
 	defer reader.Close()
 	log.Info("Connect and subscribed to topic successfully.")
 
+	// Read messages continuously in a separate go routine
 	go kafka.ReadMessages(reader)
 
 	router := route.AddRouter()

@@ -22,6 +22,7 @@ type PostTransactionInput struct {
 	Type   string  `db:"type" json:"type"`
 }
 
+// Create a new transaction
 func HandlerPostTransaction(c *gin.Context) {
 	var body PostTransactionInput
 
@@ -59,9 +60,7 @@ func HandlerPostTransaction(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-type Filters struct {
-}
-
+// Fetch existing transactions with filters
 func HandlerGetTransactions(c *gin.Context) {
 	// Get the limit query parameter from the URL
 	limitStr := c.Query("limit")
@@ -105,6 +104,7 @@ func HandlerGetTransactions(c *gin.Context) {
 	c.JSON(http.StatusOK, transactions)
 }
 
+// Fetch a particular transaction
 func HandlerGetTransaction(c *gin.Context) {
 	transactionIDStr := c.Param("id")
 	transactionID, err := strconv.Atoi(transactionIDStr)
@@ -126,6 +126,7 @@ func HandlerGetTransaction(c *gin.Context) {
 	c.JSON(http.StatusOK, transaction)
 }
 
+// Delete a particular transaction
 func HandlerDeleteTransaction(c *gin.Context) {
 	transactionIDStr := c.Param("id")
 	transactionID, err := strconv.Atoi(transactionIDStr)

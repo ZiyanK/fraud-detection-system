@@ -28,6 +28,7 @@ type Transaction struct {
 	Timestamp     time.Time `db:"timestamp" json:"timestamp"`
 }
 
+// Generates a new transaction
 func generateTransaction() Transaction {
 	TransactionTypes := []string{"purchase", "transfer", "payment"}
 
@@ -59,9 +60,11 @@ func main() {
 		panic(err)
 	}
 
+	// Initialize a kafka writer
 	writer := newKafkaWriter(config.KafkaUrl, config.KafkaTopic)
 	defer writer.Close()
 
+	// Run a endless loop to generate transactions to send to the broker
 	for {
 		transaction := generateTransaction()
 
@@ -74,6 +77,7 @@ func main() {
 			Value: transactionByte,
 		}
 
+		// Write the given message to the broker
 		err = writer.WriteMessages(context.Background(), msg)
 		if err != nil {
 			fmt.Println(err)
@@ -83,7 +87,7 @@ func main() {
 	}
 }
 
-// configration is a struct used to get the environment variable from the config.yaml file
+// configration is a struct used to get the environment variable
 type configuration struct {
 	KafkaUrl   string `mapstructure:"kafkaUrl"`
 	KafkaTopic string `mapstructure:"kafkaTopic"`
